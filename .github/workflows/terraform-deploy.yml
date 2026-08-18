@@ -9,11 +9,6 @@ on:
 
   workflow_dispatch:
 
-# Required for Azure OIDC authentication
-permissions:
-  id-token: write
-  contents: read
-
 env:
   TF_VERSION: "1.5.0"
   TF_WORKING_DIR: "1.01-Axion-System-AKS-Infra/environments/dev"
@@ -25,60 +20,73 @@ jobs:
 
     steps:
 
-      # Checkout source code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Install Terraform
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      # Azure Login using OIDC
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      # -----------------------------------
+      # Azure CLI Login
+      # -----------------------------------
+      - name: Azure CLI Login
+        shell: bash
+        run: |
+          az login \
+            --service-principal \
+            --username "${{ secrets.AZURE_CLIENT_ID }}" \
+            --password "${{ secrets.AZURE_CLIENT_SECRET }}" \
+            --tenant "${{ secrets.AZURE_TENANT_ID }}"
 
-      # Verify Azure authentication
-      - name: Verify Azure Login
-        run: az account show
+          az account set \
+            --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
-      # Terraform Format Check
+          az account show
+
+      # -----------------------------------
+      # Terraform Format
+      # -----------------------------------
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
         working-directory: ${{ env.TF_WORKING_DIR }}
 
+      # -----------------------------------
       # Terraform Init
+      # -----------------------------------
       - name: Terraform Init
         run: terraform init
         working-directory: ${{ env.TF_WORKING_DIR }}
 
+      # -----------------------------------
       # Terraform Validate
+      # -----------------------------------
       - name: Terraform Validate
         run: terraform validate
         working-directory: ${{ env.TF_WORKING_DIR }}
 
+      # -----------------------------------
       # Terraform Plan
+      # -----------------------------------
       - name: Terraform Plan
-        id: plan
         run: terraform plan -out=tfplan
         working-directory: ${{ env.TF_WORKING_DIR }}
 
+      # -----------------------------------
       # Terraform Apply
+      # -----------------------------------
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
         working-directory: ${{ env.TF_WORKING_DIR }}
 
+      # -----------------------------------
       # Terraform Output
+      # -----------------------------------
       - name: Terraform Output
         run: terraform output -json
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      # Deployment Information
       - name: Display Deployment Info
         run: |
           echo "========================================="
