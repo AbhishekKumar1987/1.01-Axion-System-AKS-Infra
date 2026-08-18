@@ -14,85 +14,143 @@ env:
   TF_WORKING_DIR: "1.01-Axion-System-AKS-Infra/environments/dev"
 
 jobs:
+
   terraform:
     name: Terraform Plan and Apply
     runs-on: self-hosted
 
     steps:
 
+      # ==================================================
+      # 1. Checkout Repository
+      # ==================================================
       - name: Checkout code
         uses: actions/checkout@v4
 
+
+      # ==================================================
+      # 2. Setup Terraform
+      # ==================================================
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      # -----------------------------------
-      # Azure CLI Login
-      # -----------------------------------
-      - name: Azure CLI Login
-        shell: bash
+
+      # ==================================================
+      # 3. Check Azure CLI
+      # ==================================================
+      - name: Check Azure CLI
+        shell: pwsh
         run: |
-          az login \
-            --service-principal \
-            --username "${{ secrets.AZURE_CLIENT_ID }}" \
-            --password "${{ secrets.AZURE_CLIENT_SECRET }}" \
+          Write-Host "Azure CLI Version:"
+          az --version
+
+
+      # ==================================================
+      # 4. Check Terraform
+      # ==================================================
+      - name: Check Terraform
+        shell: pwsh
+        run: |
+          Write-Host "Terraform Version:"
+          terraform version
+
+
+      # ==================================================
+      # 5. Azure Login using Service Principal
+      # ==================================================
+      - name: Azure CLI Login
+        shell: pwsh
+        run: |
+          Write-Host "Logging in to Azure..."
+
+          az login `
+            --service-principal `
+            --username "${{ secrets.AZURE_CLIENT_ID }}" `
+            --password "${{ secrets.AZURE_CLIENT_SECRET }}" `
             --tenant "${{ secrets.AZURE_TENANT_ID }}"
 
-          az account set \
+          Write-Host "Setting Azure subscription..."
+
+          az account set `
             --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
+          Write-Host "Azure Account:"
           az account show
 
-      # -----------------------------------
-      # Terraform Format
-      # -----------------------------------
+
+      # ==================================================
+      # 6. Terraform Format Check
+      # ==================================================
       - name: Terraform Format Check
-        run: terraform fmt -check -recursive
+        shell: pwsh
         working-directory: ${{ env.TF_WORKING_DIR }}
-
-      # -----------------------------------
-      # Terraform Init
-      # -----------------------------------
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-      # -----------------------------------
-      # Terraform Validate
-      # -----------------------------------
-      - name: Terraform Validate
-        run: terraform validate
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-      # -----------------------------------
-      # Terraform Plan
-      # -----------------------------------
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-      # -----------------------------------
-      # Terraform Apply
-      # -----------------------------------
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-      # -----------------------------------
-      # Terraform Output
-      # -----------------------------------
-      - name: Terraform Output
-        run: terraform output -json
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-      - name: Display Deployment Info
         run: |
-          echo "========================================="
-          echo " AKS Infrastructure Deployment Completed"
-          echo "========================================="
-          echo "Resource Group: ${{ secrets.AZURE_RESOURCE_GROUP }}"
-          echo "AKS Cluster: aks-micro-dev"
-          echo "ACR Name: acrmicrodev1987"
-          echo "========================================="
+          terraform fmt -check -recursive
+
+
+      # ==================================================
+      # 7. Terraform Init
+      # ==================================================
+      - name: Terraform Init
+        shell: pwsh
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform init
+
+
+      # ==================================================
+      # 8. Terraform Validate
+      # ==================================================
+      - name: Terraform Validate
+        shell: pwsh
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform validate
+
+
+      # ==================================================
+      # 9. Terraform Plan
+      # ==================================================
+      - name: Terraform Plan
+        shell: pwsh
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform plan -out=tfplan
+
+
+      # ==================================================
+      # 10. Terraform Apply
+      # ==================================================
+      - name: Terraform Apply
+        shell: pwsh
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform apply -auto-approve tfplan
+
+
+      # ==================================================
+      # 11. Terraform Output
+      # ==================================================
+      - name: Terraform Output
+        shell: pwsh
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          Write-Host "========== Terraform Outputs =========="
+          terraform output -json
+
+
+      # ==================================================
+      # 12. Deployment Information
+      # ==================================================
+      - name: Display Deployment Info
+        shell: pwsh
+        run: |
+          Write-Host "=============================================="
+          Write-Host " AKS Infrastructure Deployment Completed"
+          Write-Host "=============================================="
+          Write-Host "Resource Group : ${{ secrets.AZURE_RESOURCE_GROUP }}"
+          Write-Host "AKS Cluster    : aks-micro-dev"
+          Write-Host "ACR Name       : acrmicrodev1987"
+          Write-Host "=============================================="
