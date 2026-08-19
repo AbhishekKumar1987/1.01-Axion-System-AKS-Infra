@@ -30,6 +30,7 @@ variable "kubernetes_clusters" {
       subnet_id    = optional(string)
     }))
 
-    acr_id = optional(string)
+    acr_id      = optional(string)
+    acr_enabled = optional(bool, false)
   }))
 }
