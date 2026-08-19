@@ -14,7 +14,7 @@ variable "infra_config" {
     kubernetes_clusters = map(object({
       rg_key     = string
       dns_prefix = string
-      acr_key    = optional(string)  # Reference to the ACR to attach to this AKS cluster
+      acr_key    = optional(string) # Reference to the ACR to attach to this AKS cluster
       default_node_pool = object({
         name       = string
         node_count = optional(number, 1)
