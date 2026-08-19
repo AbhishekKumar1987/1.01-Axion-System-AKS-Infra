@@ -40,15 +40,3 @@ resource "azurerm_kubernetes_cluster" "aks" {
     }
   }
 }
-
-# Attach ACR to AKS - Allow AKS to pull images from ACR
-resource "azurerm_role_assignment" "aks_acr_pull" {
-  for_each = {
-    for k, v in var.kubernetes_clusters : k => v
-    if v.acr_enabled
-  }
-
-  scope              = each.value.acr_id
-  role_definition_name = "AcrPull"
-  principal_id       = azurerm_kubernetes_cluster.aks[each.key].kubelet_identity[0].object_id
-}
