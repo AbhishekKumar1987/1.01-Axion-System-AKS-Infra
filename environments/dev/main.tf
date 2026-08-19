@@ -25,6 +25,7 @@ module "aks" {
       dns_prefix          = v.dns_prefix
       default_node_pool   = v.default_node_pool
       tags                = v.tags
+      acr_enabled         = v.acr_key != null && contains(keys(var.infra_config.container_registries), v.acr_key)
       acr_id              = contains(keys(var.infra_config.container_registries), v.acr_key) ? module.acr.acr_ids[v.acr_key] : null
     }
   }

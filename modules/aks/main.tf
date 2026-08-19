@@ -45,7 +45,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 resource "azurerm_role_assignment" "aks_acr_pull" {
   for_each = {
     for k, v in var.kubernetes_clusters : k => v
-    if v.acr_id != null
+    if v.acr_enabled
   }
 
   scope              = each.value.acr_id
